@@ -20,34 +20,34 @@ export default function App() {
         <shadowMaterial transparent opacity={0.5} />
       </mesh>
 
-      <PivotControls rotation={[0, -Math.PI / 2, 0]} anchor={[1, -1, -1]} scale={75} depthTest={false} fixed lineWidth={2}>
+      {/* <PivotControls rotation={[0, -Math.PI / 2, 0]} anchor={[1, -1, -1]} scale={75} depthTest={false} fixed lineWidth={2}>
         <mesh castShadow receiveShadow position={[-1, 0.5, 1]}>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial />
         </mesh>
-      </PivotControls>
+      </PivotControls> */}
 
-      <PivotControls
+      {/* <PivotControls
         object={attach ? ref : undefined}
         visible={attach}
         rotation={[0, -Math.PI / 2, 0]}
         depthTest={false}
         lineWidth={2}
         anchor={[0, 1, 0]}
-      />
+      /> */}
       <mesh ref={ref} position={[0.75, 0.5, 1]} castShadow receiveShadow>
         <boxGeometry args={[0.5, 1, 0.5]} />
         <meshStandardMaterial />
       </mesh>
 
-      <PivotControls activeAxes={[true, true, false]} depthTest={false} anchor={[0, 0, 0]} scale={0.75}>
+      {/* <PivotControls activeAxes={[true, true, false]} depthTest={false} anchor={[0, 0, 0]} scale={0.75}>
         <Center top position={[1.5, 0, 0]}>
           <mesh castShadow receiveShadow>
             <dodecahedronGeometry args={[0.5]} />
             <meshStandardMaterial color="white" />
           </mesh>
         </Center>
-      </PivotControls>
+      </PivotControls> */}
 
       <PivotControls anchor={[1, 1, 1]} rotation={[Math.PI, -Math.PI / 2, 0]} scale={0.75}>
         <Center top scale={1.5} position={[-0.5, 0, -1]}>

@@ -57,7 +57,6 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
     onDragEnd,
     userData,
   } = React.useContext(context)
-
   // @ts-expect-error new in @react-three/fiber@7.0.5
   const camControls = useThree((state) => state.controls) as { enabled: boolean }
   const divRef = React.useRef<HTMLDivElement>(null!)
