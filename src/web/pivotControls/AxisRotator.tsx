@@ -1,13 +1,12 @@
 import * as React from 'react'
 import * as THREE from 'three'
 import { ThreeEvent, useThree } from '@react-three/fiber'
-import { Line } from '@react-three/drei'
-import { Html } from '@react-three/drei'
-import clamp from 'lodash.clamp'
+import { Line } from '../Line'
+import { Html } from '../Html'
 import { context } from './context'
 
-const clickDir = new THREE.Vector3()
-const intersectionDir = new THREE.Vector3()
+const clickDir = /* @__PURE__ */ new THREE.Vector3()
+const intersectionDir = /* @__PURE__ */ new THREE.Vector3()
 
 const toDegrees = (radians: number) => (radians * 180) / Math.PI
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180
@@ -53,14 +52,19 @@ const minimizeAngle = (angle: number) => {
   return result
 }
 
-const rotMatrix = new THREE.Matrix4()
-const posNew = new THREE.Vector3()
-const ray = new THREE.Ray()
-const intersection = new THREE.Vector3()
+const rotMatrix = /* @__PURE__ */ new THREE.Matrix4()
+const posNew = /* @__PURE__ */ new THREE.Vector3()
+const ray = /* @__PURE__ */ new THREE.Ray()
+const intersection = /* @__PURE__ */ new THREE.Vector3()
 
-export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; axis: 0 | 1 | 2 }> = ({ dir1, dir2, axis }) => {
+export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; axis: 0 | 1 | 2 }> = ({
+  dir1,
+  dir2,
+  axis,
+}) => {
   const {
     rotationLimits,
+    annotations,
     annotationsClass,
     depthTest,
     scale,
@@ -68,12 +72,11 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
     fixed,
     axisColors,
     hoveredColor,
-    displayValues,
     opacity,
     onDragStart,
     onDrag,
     onDragEnd,
-    userData
+    userData,
   } = React.useContext(context)
 
   // @ts-expect-error new in @react-three/fiber@7.0.5
@@ -94,7 +97,7 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
 
   const onPointerDown = React.useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      if (displayValues) {
+      if (annotations) {
         divRef.current.innerText = `${toDegrees(angle.current).toFixed(0)}º`
         divRef.current.style.display = 'block'
       }
@@ -111,7 +114,7 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
       // @ts-ignore
       e.target.setPointerCapture(e.pointerId)
     },
-    [camControls, onDragStart, axis]
+    [annotations, camControls, onDragStart, axis]
   )
 
   const onPointerMove = React.useCallback(
@@ -138,14 +141,14 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
         if (min !== undefined && max !== undefined && max - min < 2 * Math.PI) {
           deltaAngle = minimizeAngle(deltaAngle)
           deltaAngle = deltaAngle > Math.PI ? deltaAngle - 2 * Math.PI : deltaAngle
-          deltaAngle = clamp(deltaAngle, min - angle0.current, max - angle0.current)
+          deltaAngle = THREE.MathUtils.clamp(deltaAngle, min - angle0.current, max - angle0.current)
           angle.current = angle0.current + deltaAngle
         } else {
           angle.current = minimizeAngle(angle0.current + deltaAngle)
           angle.current = angle.current > Math.PI ? angle.current - 2 * Math.PI : angle.current
         }
 
-        if (displayValues) {
+        if (annotations) {
           degrees = toDegrees(angle.current)
           divRef.current.innerText = `${degrees.toFixed(0)}º`
         }
@@ -155,12 +158,12 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
         onDrag(rotMatrix)
       }
     },
-    [onDrag, isHovered, rotationLimits, axis]
+    [annotations, onDrag, isHovered, rotationLimits, axis]
   )
 
   const onPointerUp = React.useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      if (displayValues) {
+      if (annotations) {
         divRef.current.style.display = 'none'
       }
       e.stopPropagation()
@@ -171,7 +174,7 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
       // @ts-ignore
       e.target.releasePointerCapture(e.pointerId)
     },
-    [camControls, onDragEnd]
+    [annotations, camControls, onDragEnd]
   )
 
   const onPointerOut = React.useCallback((e: any) => {
@@ -205,21 +208,24 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
       onPointerUp={onPointerUp}
       onPointerOut={onPointerOut}
       matrix={matrixL}
-      matrixAutoUpdate={false}>
-      <Html position={[r, r, 0]}>
-        <div
-          style={{
-            display: 'none',
-            background: '#151520',
-            color: 'white',
-            padding: '6px 8px',
-            borderRadius: 7,
-            whiteSpace: 'nowrap'
-          }}
-          className={annotationsClass}
-          ref={divRef}
-        />
-      </Html>
+      matrixAutoUpdate={false}
+    >
+      {annotations && (
+        <Html position={[r, r, 0]}>
+          <div
+            style={{
+              display: 'none',
+              background: '#151520',
+              color: 'white',
+              padding: '6px 8px',
+              borderRadius: 7,
+              whiteSpace: 'nowrap',
+            }}
+            className={annotationsClass}
+            ref={divRef}
+          />
+        </Html>
+      )}
       {/* The invisible mesh being raycast */}
       <Line points={arc} lineWidth={lineWidth * 4} visible={false} userData={userData} />
       {/* The visible mesh */}
@@ -229,10 +235,12 @@ export const AxisRotator: React.FC<{ dir1: THREE.Vector3; dir2: THREE.Vector3; a
         depthTest={depthTest}
         points={arc}
         lineWidth={lineWidth}
+        side={THREE.DoubleSide}
         color={(isHovered ? hoveredColor : axisColors[axis]) as any}
         opacity={opacity}
         polygonOffset
         polygonOffsetFactor={-10}
+        fog={false}
       />
     </group>
   )

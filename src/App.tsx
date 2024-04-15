@@ -1,10 +1,9 @@
+import React from "react"
 import { useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { useGLTF, GizmoHelper, GizmoViewport, OrbitControls, Center, softShadows } from '@react-three/drei'
+import { useGLTF, GizmoHelper, GizmoViewport, OrbitControls, Center } from '@react-three/drei'
 import { useControls } from 'leva'
-import { PivotControls } from './pivotControls/index'
-
-softShadows()
+import { PivotControls } from "./web/pivotControls"
 
 export default function App() {
   const ref = useRef()
@@ -64,7 +63,7 @@ export default function App() {
   )
 }
 
-function Cup(props) {
+function Cup() {
   const { nodes, materials } = useGLTF('/coffee-transformed.glb')
   return (
     <mesh
@@ -72,8 +71,9 @@ function Cup(props) {
       castShadow
       geometry={nodes.coffee_cup_top_16oz.geometry}
       material={materials['13 - Default']}
-      {...props}
       dispose={null}
     />
   )
 }
+
+

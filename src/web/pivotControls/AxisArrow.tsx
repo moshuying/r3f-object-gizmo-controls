@@ -1,14 +1,19 @@
 import * as React from 'react'
 import * as THREE from 'three'
 import { ThreeEvent, useThree } from '@react-three/fiber'
-import { Line } from '@react-three/drei'
-import { Html } from '@react-three/drei'
+import { Line } from '../Line'
+import { Html } from '../Html'
 import { context } from './context'
 
-const vec1 = new THREE.Vector3()
-const vec2 = new THREE.Vector3()
+const vec1 = /* @__PURE__ */ new THREE.Vector3()
+const vec2 = /* @__PURE__ */ new THREE.Vector3()
 
-export const calculateOffset = (clickPoint: THREE.Vector3, normal: THREE.Vector3, rayStart: THREE.Vector3, rayDir: THREE.Vector3) => {
+export const calculateOffset = (
+  clickPoint: THREE.Vector3,
+  normal: THREE.Vector3,
+  rayStart: THREE.Vector3,
+  rayDir: THREE.Vector3
+) => {
   const e1 = normal.dot(normal)
   const e2 = normal.dot(clickPoint) - normal.dot(rayStart)
   const e3 = normal.dot(rayDir)
@@ -31,13 +36,14 @@ export const calculateOffset = (clickPoint: THREE.Vector3, normal: THREE.Vector3
   return offset
 }
 
-const upV = new THREE.Vector3(0, 1, 0)
-const offsetMatrix = new THREE.Matrix4()
+const upV = /* @__PURE__ */ new THREE.Vector3(0, 1, 0)
+const offsetMatrix = /* @__PURE__ */ new THREE.Matrix4()
 
 export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> = ({ direction, axis }) => {
   const {
     translation,
     translationLimits,
+    annotations,
     annotationsClass,
     depthTest,
     scale,
@@ -45,12 +51,11 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
     fixed,
     axisColors,
     hoveredColor,
-    displayValues,
     opacity,
     onDragStart,
     onDrag,
     onDragEnd,
-    userData
+    userData,
   } = React.useContext(context)
 
   // @ts-expect-error new in @react-three/fiber@7.0.5
@@ -63,7 +68,7 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
 
   const onPointerDown = React.useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      if (displayValues) {
+      if (annotations) {
         divRef.current.innerText = `${translation.current[axis].toFixed(2)}`
         divRef.current.style.display = 'block'
       }
@@ -79,31 +84,41 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
       // @ts-ignore - setPointerCapture is not in the type definition
       e.target.setPointerCapture(e.pointerId)
     },
-    [direction, camControls, onDragStart, translation, axis]
+    [annotations, direction, camControls, onDragStart, translation, axis]
   )
 
   const onPointerMove = React.useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation()
       if (!isHovered) setIsHovered(true)
+
       if (clickInfo.current) {
         const { clickPoint, dir } = clickInfo.current
         const [min, max] = translationLimits?.[axis] || [undefined, undefined]
+
         let offset = calculateOffset(clickPoint, dir, e.ray.origin, e.ray.direction)
-        if (min !== undefined) offset = Math.max(offset, min - offset0.current)
-        if (max !== undefined) offset = Math.min(offset, max - offset0.current)
+        if (min !== undefined) {
+          offset = Math.max(offset, min - offset0.current)
+        }
+        if (max !== undefined) {
+          offset = Math.min(offset, max - offset0.current)
+        }
         translation.current[axis] = offset0.current + offset
-        if (displayValues) divRef.current.innerText = `${translation.current[axis].toFixed(2)}`
+        if (annotations) {
+          divRef.current.innerText = `${translation.current[axis].toFixed(2)}`
+        }
         offsetMatrix.makeTranslation(dir.x * offset, dir.y * offset, dir.z * offset)
         onDrag(offsetMatrix)
       }
     },
-    [onDrag, isHovered, translation, translationLimits, axis]
+    [annotations, onDrag, isHovered, translation, translationLimits, axis]
   )
 
   const onPointerUp = React.useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      if (displayValues) divRef.current.style.display = 'none'
+      if (annotations) {
+        divRef.current.style.display = 'none'
+      }
       e.stopPropagation()
       clickInfo.current = null
       onDragEnd()
@@ -111,7 +126,7 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
       // @ts-ignore - releasePointerCapture & PointerEvent#pointerId is not in the type definition
       e.target.releasePointerCapture(e.pointerId)
     },
-    [camControls, onDragEnd]
+    [annotations, camControls, onDragEnd]
   )
 
   const onPointerOut = React.useCallback((e: ThreeEvent<PointerEvent>) => {
@@ -138,21 +153,24 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerOut={onPointerOut}>
-        <Html position={[0, -coneLength, 0]}>
-          <div
-            style={{
-              display: 'none',
-              background: '#151520',
-              color: 'white',
-              padding: '6px 8px',
-              borderRadius: 7,
-              whiteSpace: 'nowrap'
-            }}
-            className={annotationsClass}
-            ref={divRef}
-          />
-        </Html>
+        onPointerOut={onPointerOut}
+      >
+        {annotations && (
+          <Html position={[0, -coneLength, 0]}>
+            <div
+              style={{
+                display: 'none',
+                background: '#151520',
+                color: 'white',
+                padding: '6px 8px',
+                borderRadius: 7,
+                whiteSpace: 'nowrap',
+              }}
+              className={annotationsClass}
+              ref={divRef}
+            />
+          </Html>
+        )}
         {/* The invisible mesh being raycast */}
         <mesh visible={false} position={[0, (cylinderLength + coneLength) / 2.0, 0]} userData={userData}>
           <cylinderGeometry args={[coneWidth * 1.4, coneWidth * 1.4, cylinderLength + coneLength, 8, 1]} />
@@ -164,15 +182,25 @@ export const AxisArrow: React.FC<{ direction: THREE.Vector3; axis: 0 | 1 | 2 }> 
           depthTest={depthTest}
           points={[0, 0, 0, 0, cylinderLength, 0] as any}
           lineWidth={lineWidth}
+          side={THREE.DoubleSide}
           color={color_ as any}
           opacity={opacity}
           polygonOffset
           renderOrder={1}
           polygonOffsetFactor={-10}
+          fog={false}
         />
         <mesh raycast={() => null} position={[0, cylinderLength + coneLength / 2.0, 0]} renderOrder={500}>
           <coneGeometry args={[coneWidth, coneLength, 24, 1]} />
-          <meshBasicMaterial transparent depthTest={depthTest} color={color_} opacity={opacity} polygonOffset polygonOffsetFactor={-10} />
+          <meshBasicMaterial
+            transparent
+            depthTest={depthTest}
+            color={color_}
+            opacity={opacity}
+            polygonOffset
+            polygonOffsetFactor={-10}
+            fog={false}
+          />
         </mesh>
       </group>
     </group>
